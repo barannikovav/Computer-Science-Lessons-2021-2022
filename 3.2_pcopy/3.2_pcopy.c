@@ -38,7 +38,7 @@ ssize_t pwriteall (int fd, const void *buf, size_t count, int offset)
 enum 
 {
 
-ERR_ARG,
+ERR_ARG = 1,
 ERR_LST,
 ERR_FTY,
 ERR_FOF,
