@@ -11,7 +11,7 @@
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-const char * File_type_switch (mode_t st_mode) { 
+const char * File_type_switch (mode_t st_mode) { // switch function for type of file
         switch (st_mode & S_IFMT) {
            case S_IFBLK:  return "block device\n";            break;
            case S_IFCHR:  return "character device\n";        break;
@@ -27,16 +27,17 @@ const char * File_type_switch (mode_t st_mode) {
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-char * access_convert (uintmax_t access_code) {
-        access_code = access_code & 0x1FF;
+char * access_convert (uintmax_t access_code) {//function that  convert access code to access string
+        
+        access_code = access_code & 0x1FF;//using mask here to decode 
         char * output;
         
-        output = (char *) calloc(10, sizeof(char));
+        output = (char *) calloc(10, sizeof(char));//creating output string
 
 
         uintmax_t converter = 0x100;
         
-        for (int i = 0; i < 9; ++i) {
+        for (int i = 0; i < 9; ++i) { //inserting right sequence of chars in 'rwx' format
                 if ((access_code & converter) == converter) {
                         if (i % 3 == 0) {
                                 output[i] = 'r';
@@ -60,26 +61,16 @@ char * access_convert (uintmax_t access_code) {
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-char * bad_ctime(struct timespec * time) {
-        char * output;
-        char first_part[20];
-        output = (char *) calloc(32, sizeof(char));
-        for (int i = 0; i < 19; ++i) {
-                first_part[i] = *(ctime(&time->tv_sec) + i);
-        }
-        first_part[19] = '.';
-        char second_part[4]; 
-        for (int j = 20; j < 24; ++j) {
-                second_part[j - 20] = *(ctime(&time->tv_sec) + j);
-        }
-        
-        sprintf(output, "%s", first_part);
-        int time_zone = (int)-timezone/3600;
-        sprintf(&output[20], "%li %s%d %s %s", time->tv_nsec, "UTM +", time_zone, second_part, "\n");
+char * bad_ctime(struct timespec * time) { //function that is using instead of ctimes
+        struct tm* t_time = localtime(&(time->tv_sec));
+        long  int n_sec = time->tv_nsec;
+        char* output = (char*)calloc(40, sizeof(char));
+
+        strftime(output,  20, "%F %T", t_time);
+        sprintf(output +  19, ".%ld", n_sec);
+        strftime(output + 29, 7, " %z", t_time);
 
         return output;
-
-
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -130,19 +121,19 @@ int main(int argc, char *argv[])
                    (intmax_t) sb.st_blocks);
 
            char * s = bad_ctime(&sb.st_atimespec);
-           printf("Last status change:       %s", s);
+           printf("Last status change:       %s\n", s);
            free(s);
 
            s = bad_ctime(&sb.st_ctimespec);
-           printf("Last file access:         %s", s);
+           printf("Last file access:         %s\n", s);
            free(s);
 
            s = bad_ctime(&sb.st_mtimespec);
-           printf("Last file modification:   %s", s);
+           printf("Last file modification:   %s\n", s);
            free(s);
 
            s = bad_ctime(&sb.st_birthtimespec);
-           printf("File creation(birth):     %s", s);
+           printf("File creation(birth):     %s\n", s);
            free(s);
 
 
