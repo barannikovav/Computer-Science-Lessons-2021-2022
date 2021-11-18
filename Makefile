@@ -15,7 +15,7 @@ NC=\033[0m
 GREEN=\033[0;32m
 BRIGHT_MAGENTA=\033[0;35m
 
-all: stat write contentcopy 
+all: stat write contentcopy copyperm copyown
 
 stat: directory
 			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
