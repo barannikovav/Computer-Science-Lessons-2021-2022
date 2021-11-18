@@ -5,6 +5,8 @@ CFLAGS= -Wall -Wextra -Werror -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qu
 SOURCE_01 = 01_stat
 SOURCE_02 = 02_write
 SOURCE_03 = 03_contentcopy
+SOURCE_04 = 04_copyperm
+SOURCE_04 = 05_copyown
 
 EXEC_DIR = [^]_executables
 
@@ -17,7 +19,7 @@ all: stat write contentcopy
 
 stat: directory
 			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
-			$(CC) $(CFLAGS) ${SOURCE_01}/01_mystat.c -o ${EXEC_DIR}/mystat.exe
+			$(CC) $(CFLAGS) ${SOURCE_01}/01_stat.c -o ${EXEC_DIR}/stat.exe
 
 write: directory
 			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
@@ -29,6 +31,14 @@ contentcopy: directory
 			$(CC) $(CFLAGS) ${SOURCE_03}/03.1_copy.c -o ${EXEC_DIR}/copy.exe
 			$(CC) $(CFLAGS) ${SOURCE_03}/03.2_pcopy.c -o ${EXEC_DIR}/pcopy.exe
 			$(CC) $(CFLAGS) ${SOURCE_03}/03*_extcopy.c -o ${EXEC_DIR}/extcopy.exe
+
+copyperm: directory
+			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+			$(CC) $(CFLAGS) ${SOURCE_04}/04_copyperm.c -o ${EXEC_DIR}/copyperm.exe
+
+copyown: directory
+			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+			$(CC) $(CFLAGS) ${SOURCE_04}/05_copyown.c -o ${EXEC_DIR}/copyown.exe
 
 directory:
 			if [ ! -d "${EXEC_DIR}" ]; then \
