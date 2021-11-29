@@ -1,12 +1,13 @@
 CC=gcc
 
-CFLAGS= -Wall -Wextra -Werror -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qual -Wundef -Wstrict-prototypes -Wbad-function-cast -Wreturn-type -std=c17 
+CFLAGS= -Wall -Wextra -Werror -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qual -Wundef -Wstrict-prototypes -Wbad-function-cast -Wreturn-type --std=c17 
 
 SOURCE_01 = 01_stat
 SOURCE_02 = 02_write
 SOURCE_03 = 03_contentcopy
 SOURCE_04 = 04_copyperm
-SOURCE_04 = 05_copyown
+SOURCE_05 = 05_copyown
+SOURCE_06 = 06_readdir
 
 EXEC_DIR = [^]_executables
 
@@ -15,37 +16,86 @@ NC=\033[0m
 GREEN=\033[0;32m
 BRIGHT_MAGENTA=\033[0;35m
 
-all: stat write contentcopy copyperm copyown
 
-stat: directory
-			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
-			$(CC) $(CFLAGS) ${SOURCE_01}/01_stat.c -o ${EXEC_DIR}/stat.exe
+ifndef VERBOSE
+.SILENT:
+endif
 
-write: directory
-			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
-			$(CC) $(CFLAGS) ${SOURCE_02}/02.1_write.c -o ${EXEC_DIR}/write.exe
-			$(CC) $(CFLAGS) ${SOURCE_02}/02.2_dprintf.c -o ${EXEC_DIR}/dprintf.exe
+all: 01_stat 02_write 03_contentcopy 04_copyperm 05_copyown 06_readdir
 
-contentcopy: directory
-			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
-			$(CC) $(CFLAGS) ${SOURCE_03}/03.1_copy.c -o ${EXEC_DIR}/copy.exe
-			$(CC) $(CFLAGS) ${SOURCE_03}/03.2_pcopy.c -o ${EXEC_DIR}/pcopy.exe
-			$(CC) $(CFLAGS) ${SOURCE_03}/03*_extcopy.c -o ${EXEC_DIR}/extcopy.exe
+#----------------------------------------------------------------------------
 
-copyperm: directory
-			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
-			$(CC) $(CFLAGS) ${SOURCE_04}/04_copyperm.c -o ${EXEC_DIR}/copyperm.exe
+01_stat: ${SOURCE_01}/01_stat.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
 
-copyown: directory
-			@echo  "${GREEN}[Building task] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
-			$(CC) $(CFLAGS) ${SOURCE_04}/05_copyown.c -o ${EXEC_DIR}/copyown.exe
+${SOURCE_01}/01_stat.exe:
+			$(CC) $(CFLAGS) ${SOURCE_01}/01_stat.c -o $@
 
-directory:
-			if [ ! -d "${EXEC_DIR}" ]; then \
-				echo "${GREEN}[Creating directory] >> ${NC}${BRIGHT_MAGENTA}${EXEC_DIR}${NC}"; \
-				mkdir -p ${EXEC_DIR}; \
-			fi
+#----------------------------------------------------------------------------
+
+02_write: ${SOURCE_02}/02.1_write.exe ${SOURCE_02}/02.2_dprintf.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_02}/02.1_write.exe:
+			$(CC) $(CFLAGS) ${SOURCE_02}/02.1_write.c -o $@
+
+${SOURCE_02}/02.2_dprintf.exe:			
+			$(CC) $(CFLAGS) ${SOURCE_02}/02.2_dprintf.c -o $@
+
+#----------------------------------------------------------------------------
+
+03_contentcopy: ${SOURCE_03}/03.1_copy.exe ${SOURCE_03}/03.2_pcopy.exe ${SOURCE_03}/03*_extcopy.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_03}/03.1_copy.exe:
+			$(CC) $(CFLAGS) ${SOURCE_03}/03.1_copy.c -o $@
+
+${SOURCE_03}/03.2_pcopy.exe:
+			$(CC) $(CFLAGS) ${SOURCE_03}/03.2_pcopy.c -o $@
+
+${SOURCE_03}/03*_extcopy.exe:
+			$(CC) $(CFLAGS) ${SOURCE_03}/03*_extcopy.c -o $@
+
+#----------------------------------------------------------------------------
+
+04_copyperm: ${SOURCE_04}/04_copyperm.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_04}/04_copyperm.exe:
+			$(CC) $(CFLAGS) ${SOURCE_04}/04_copyperm.c -o $@
+
+#----------------------------------------------------------------------------
+
+05_copyown: ${SOURCE_05}/05_copyown.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_05}/05_copyown.exe:
+			$(CC) $(CFLAGS) ${SOURCE_05}/05_copyown.c -o $@
+
+#----------------------------------------------------------------------------
+
+06_readdir: ${SOURCE_06}/06.1_readdir.exe ${SOURCE_06}/06.2_readdir_f.exe ${SOURCE_06}/06.4_readdir_r.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_06}/06.1_readdir.exe:		
+			$(CC) $(CFLAGS) ${SOURCE_06}/06.1_readdir.c -o $@
+
+${SOURCE_06}/06.2_readdir_f.exe:
+			$(CC) $(CFLAGS) ${SOURCE_06}/06.2_readdir_f.c -o $@
+
+${SOURCE_06}/06.3_readdir_g.exe:
+			$(CC) $(CFLAGS) ${SOURCE_06}/06.3_readdir_g.c -o $@
+
+${SOURCE_06}/06.4_readdir_r.exe:
+			$(CC) $(CFLAGS) ${SOURCE_06}/06.4_readdir_r.c -o $@
+
+#----------------------------------------------------------------------------
 
 clean:
-			@echo  "${GREEN}[Cleaning] >>${NC} ${RED}×××${NC}"
-			rm -rf ${EXEC_DIR}/*
+			echo  "${GREEN}[Cleaning directories] >>${NC} ${RED}×××${NC}"
+			rm -rf ${SOURCE_01}/*.exe
+			rm -rf ${SOURCE_02}/*.exe
+			rm -rf ${SOURCE_03}/*.exe
+			rm -rf ${SOURCE_04}/*.exe
+			rm -rf ${SOURCE_05}/*.exe
+			rm -rf ${SOURCE_06}/*.exe
