@@ -8,6 +8,7 @@ SOURCE_03 = 03_contentcopy
 SOURCE_04 = 04_copyperm
 SOURCE_05 = 05_copyown
 SOURCE_06 = 06_readdir
+SOURCE_07 = 07_copydir
 
 EXEC_DIR = [^]_executables
 
@@ -74,7 +75,7 @@ ${SOURCE_05}/05_copyown.exe:
 
 #----------------------------------------------------------------------------
 
-06_readdir: ${SOURCE_06}/06.1_readdir.exe ${SOURCE_06}/06.2_readdir_f.exe ${SOURCE_06}/06.4_readdir_r.exe
+06_readdir: ${SOURCE_06}/06.1_readdir.exe ${SOURCE_06}/06.2_readdir_f.exe ${SOURCE_06}/06.3_readdir_g.exe ${SOURCE_06}/06.4_readdir_r.exe
 			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
 
 ${SOURCE_06}/06.1_readdir.exe:		
@@ -91,6 +92,18 @@ ${SOURCE_06}/06.4_readdir_r.exe:
 
 #----------------------------------------------------------------------------
 
+07_copydir: ${SOURCE_07}/07.1_copydir.exe ${SOURCE_07}/07.2_copydir_r.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_07}/07.1_copydir.exe:
+			$(CC) $(CFLAGS) ${SOURCE_07}/07.1_copydir.c -o $@
+
+${SOURCE_07}/07.2_copydir_r.exe:
+			$(CC) $(CFLAGS) ${SOURCE_07}/07.2_copydir_r.c -o $@
+
+#----------------------------------------------------------------------------
+
+
 clean:
 			echo  "${GREEN}[Cleaning directories] >>${NC} ${RED}×××${NC}"
 			rm -rf ${SOURCE_01}/*.exe
@@ -99,3 +112,5 @@ clean:
 			rm -rf ${SOURCE_04}/*.exe
 			rm -rf ${SOURCE_05}/*.exe
 			rm -rf ${SOURCE_06}/*.exe
+			rm -rf ${SOURCE_07}/*.exe
+

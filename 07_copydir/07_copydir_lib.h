@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <dirent.h> // for dirent struct
 
@@ -60,12 +61,18 @@ enum error_codes_copying
 //-----------------------------------------------------------------------------------------------------------------------
 
 int copying_permissions_at (int dirfd, const char * filepath, const struct stat* sb) {
-	if (fchmodat(dirfd, filepath, sb->st_mode, AT_SYMLINK_NOFOLLOW) < 0) { //using fchmodat to change file permissions mode
-		handle_error("Error in fchmodat");
+	int fd = openat(dirfd, filepath, O_RDONLY);
+
+	if (fd < 0) { // checking file descriptor for errors
+		handle_error("openat");
 	}
 
-	if (utimensat(dirfd, filepath, (struct timespec[]){sb->st_atimespec, sb->st_mtimespec}, AT_SYMLINK_NOFOLLOW) < 0) { // using utimensat to set file access and modification time
-		handle_error("Error in utimensat");
+	if (fchmod(fd, sb->st_mode) < 0) { //using fchmodat to change file permissions mode
+		handle_error("fchmod");
+	}
+
+	if (futimens(fd, (struct timespec[]){sb->st_atim, sb->st_mtim}) < 0) { // using futimens to set file access and modification time
+		handle_error("futimens");
 	}
 
 	return 0;
@@ -74,7 +81,7 @@ int copying_permissions_at (int dirfd, const char * filepath, const struct stat*
 //-----------------------------------------------------------------------------------------------------------------------
 
 int copying_own_at (int dirfd, const char * filepath, const struct stat* sb) {
-	if (fchownat(dirfd, filepath, sb->st_uid, sb->st_gid, AT_SYMLINK_NOFOLLOW) < 0) {
+	if (fchownat(dirfd, filepath, sb->st_uid, sb->st_gid, 0) < 0) {
 		handle_error("Error in fchownat");
 	}
 
@@ -175,8 +182,6 @@ int copying_regular_file_at (int dirfd_start, int dirfd_destination, const char*
 	}
 
 
-	int num_of_copied_blocks = 0;
-
 	ssize_t read_return = 1; // creating a variable to get read completion status
 													 // default value is 1 to start while
 	while (read_return > 0) {
@@ -191,18 +196,12 @@ int copying_regular_file_at (int dirfd_start, int dirfd_destination, const char*
 
 		if (writeall(fd_2, buf, BLOCK_SIZE) < 0) { // checking writeall completion status for errors
 			handle_error_free("Error in file writing", buf);
-		} else { ++num_of_copied_blocks; }
+		}
 
 		free(buf);
 
 
 	}
-
-	if (read_return == 0) { // checking final completion status
-		puts("Copying of regular file completed");
-	}
-
-	printf("Number of blocks were processed: %d\n", num_of_copied_blocks);
 
 	if (close(fd_1) < 0) { // checking closing first file descriptor for errors
 		handle_error("Error in first file closing");
@@ -220,7 +219,7 @@ int copying_regular_file_at (int dirfd_start, int dirfd_destination, const char*
 //-----------------------------------------------------------------------------------------------------------------------
 
 int copying_dir_at (int dirfd, const char * newname, const struct stat* sb) {
-	if (mkdirat(dirfd, newname, sb->st_mode) < 0) {
+	if (mkdirat(dirfd, newname, sb->st_mode) < 0 && errno != EEXIST) {
 		handle_error("mkdirat");
 	}
 
@@ -232,7 +231,7 @@ int copying_dir_at (int dirfd, const char * newname, const struct stat* sb) {
 int copying_of_file (int start_fd, int dest_fd, mode_t type, const char* old_name, const char* new_name, const struct stat* sb) {
 	int return_code; // variable that uses to contain return codes of copying functions
 
-	switch (type) {
+	switch (type & S_IFMT) {
 		
 		case S_IFREG: 
 			return_code = copying_regular_file_at(start_fd, dest_fd, old_name, new_name);
@@ -286,6 +285,8 @@ int copying_of_file (int start_fd, int dest_fd, mode_t type, const char* old_nam
 				fprintf(stderr, "Error in function copying_dir_at. Error code:%d \n", return_code);
 				return ERR_CFC;
 			}
+
+			break;
 		default:
 			perror("Error. The file type cannot be processed by the program.");
 			return ERR_CFC;
@@ -311,18 +312,23 @@ int copying_of_file (int start_fd, int dest_fd, mode_t type, const char* old_nam
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-int copying_dir_content (const int dirfd_start, const int dirfd_destination) {
+int copying_dir_content (DIR* dir_start, DIR* dir_destination) {
 
-	DIR *dir_start = fdopendir(dirfd_start); /* getting dir descriptor by it's path */
-	DIR *dir_destination = fdopendir(dirfd_destination);
+	const int dirfd_start = dirfd(dir_start); /* getting dir descriptor by it's path */
+	if (dirfd_start < 0) /* checking opendir output for errors */
+		handle_error("dirfd dirfd_start");
 
-	if ((dir_start == NULL) || (dir_destination == NULL)) /* checking opendir output for errors */
-    handle_error("fdopendir");
+	const int dirfd_destination = dirfd(dir_destination);
+	if (dirfd_destination < 0) 
+    	handle_error("dirfd dirfd_destination");
 
   struct dirent* entry;
 
   while ((entry = readdir(dir_start)) != NULL) { /* scanning dir until end or error */
   	struct stat sb;
+
+  	if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+  	} else { continue; }
 
   	if (fstatat(dirfd_start, entry->d_name, &sb, AT_SYMLINK_NOFOLLOW) < 0) 
     	handle_error("fstatat");
@@ -335,3 +341,73 @@ int copying_dir_content (const int dirfd_start, const int dirfd_destination) {
 
   return 0;
 }
+
+//-----------------------------------------------------------------------------------------------------------------------
+
+
+int copying_dir_content_recursively (DIR* dir_start, DIR* dir_destination) {
+
+	const int dirfd_start = dirfd(dir_start); /* getting dir descriptor by it's path */
+	if (dir_start == NULL)
+		handle_error("fdopendir dir_start");
+
+	const int dirfd_destination = dirfd(dir_destination);
+
+	if (dir_destination == NULL) /* checking opendir output for errors */
+    	handle_error("fdopendir dir_destination");
+
+  	struct dirent* entry;
+
+	while ((entry = readdir(dir_start)) != NULL) { /* scanning dir until end or error */
+  		struct stat sb;
+
+  		if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+  		} else { continue; }
+
+  		if (fstatat(dirfd_start, entry->d_name, &sb, AT_SYMLINK_NOFOLLOW) < 0) 
+    		handle_error("fstatat");
+
+    	if (copying_of_file(dirfd_start, dirfd_destination, sb.st_mode, entry->d_name, entry->d_name, &sb) != 0) {
+    		fprintf(stderr, "Failed to copy %s\n", entry->d_name);
+    	}
+
+    	if (S_ISDIR(sb.st_mode)) {
+
+    		const int deeper_old_dir_ptr_fd = openat(dirfd_start, entry->d_name, O_RDONLY | O_DIRECTORY); // getting fd pointer of deeper dir program will copy from
+
+    		if (deeper_old_dir_ptr_fd < 0) { // checking file descriptor for errors
+				handle_error("openat deeper_old_dir_ptr_fd");
+			}
+
+			DIR * deeper_old_dir_ptr = fdopendir(deeper_old_dir_ptr_fd);
+
+			if (deeper_old_dir_ptr == NULL) // checking work of open for errors
+				handle_error("fdopendir deeper_old_dir_ptr");
+
+			const int deeper_new_dir_ptr_fd = openat(dirfd_destination, entry->d_name, O_RDONLY | O_DIRECTORY);
+
+			if (deeper_old_dir_ptr_fd < 0) { // checking file descriptor for errors
+				handle_error("openat deeper_new_dir_ptr_fd");
+			}
+
+			DIR * deeper_new_dir_ptr = fdopendir(deeper_new_dir_ptr_fd); // getting dir pointer of deeper dir program will copy to
+
+			if (deeper_new_dir_ptr == NULL) // checking work of open for errors
+				handle_error("opendir deeper_new_dir_ptr");
+
+			if (copying_dir_content_recursively(deeper_old_dir_ptr, deeper_new_dir_ptr) != 0) {
+				fprintf(stderr, "Failed to copy %s recursively\n", entry->d_name);
+			}
+
+			if (closedir(deeper_old_dir_ptr) != 0)/* closing descriptor with error checking */ 
+  				handle_error("closedir deeper_old_dir_ptr");
+
+  			if (closedir(deeper_new_dir_ptr) != 0)
+  				handle_error("closedir deeper_new_dir_ptr");
+		}
+	}
+
+  	return 0;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------
