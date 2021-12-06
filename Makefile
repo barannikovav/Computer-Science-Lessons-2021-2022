@@ -10,6 +10,7 @@ SOURCE_05 = 05_copyown
 SOURCE_06 = 06_readdir
 SOURCE_07 = 07_copydir
 SOURCE_09 = 09_statvfs
+SOURCE_11 = 11_flock
 
 EXEC_DIR = [^]_executables
 
@@ -112,6 +113,14 @@ ${SOURCE_09}/09.1_statvfs.exe:
 
 #----------------------------------------------------------------------------
 
+11_flock: ${SOURCE_11}/11.1_flock.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_11}/11.1_flock.exe:
+			$(CC) $(CFLAGS) ${SOURCE_11}/11.1_flock.c -o $@
+
+#----------------------------------------------------------------------------
+
 
 clean:
 			echo  "${GREEN}[Cleaning directories] >>${NC} ${RED}×××${NC}"
@@ -122,4 +131,6 @@ clean:
 			rm -rf ${SOURCE_05}/*.exe
 			rm -rf ${SOURCE_06}/*.exe
 			rm -rf ${SOURCE_07}/*.exe
+			rm -rf ${SOURCE_09}/*.exe
+			rm -rf ${SOURCE_11}/*.exe ${SOURCE_11}/*.txt
 
