@@ -1,6 +1,6 @@
 CC=gcc
 
-CFLAGS= -Wall -Wextra -Werror -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qual -Wundef -Wstrict-prototypes -Wbad-function-cast -Wreturn-type --std=c17 
+CFLAGS= -Wall -Wextra -Werror -Wnarrowing -Wconversion -Wwrite-strings -Wcast-qual -Wundef -Wstrict-prototypes -Wbad-function-cast -Wreturn-type -std=gnu11 
 
 SOURCE_01 = 01_stat
 SOURCE_02 = 02_write
@@ -9,6 +9,7 @@ SOURCE_04 = 04_copyperm
 SOURCE_05 = 05_copyown
 SOURCE_06 = 06_readdir
 SOURCE_07 = 07_copydir
+SOURCE_09 = 09_statvfs
 
 EXEC_DIR = [^]_executables
 
@@ -100,6 +101,14 @@ ${SOURCE_07}/07.1_copydir.exe:
 
 ${SOURCE_07}/07.2_copydir_r.exe:
 			$(CC) $(CFLAGS) ${SOURCE_07}/07.2_copydir_r.c -o $@
+
+#----------------------------------------------------------------------------
+
+09_statvfs: ${SOURCE_09}/09.1_statvfs.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_09}/09.1_statvfs.exe:
+			$(CC) $(CFLAGS) ${SOURCE_09}/09.1_statvfs.c -o $@
 
 #----------------------------------------------------------------------------
 
