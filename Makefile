@@ -12,6 +12,7 @@ SOURCE_07 = 07_copydir
 SOURCE_09 = 09_statvfs
 SOURCE_11 = 11_flock
 SOURCE_13 = 13_wait
+SOURCE_16 = 16_mqueue
 
 EXEC_DIR = [^]_executables
 
@@ -129,6 +130,16 @@ ${SOURCE_13}/13.1_wait.exe:
 
 ${SOURCE_13}/13.2_ptrace.exe:
 			$(CC) $(CFLAGS) ${SOURCE_13}/13.2_ptrace.c -o $@
+
+#----------------------------------------------------------------------------
+
+16_mqueue: ${SOURCE_16}/16.0_mqueue.exe ${SOURCE_16}/16.0_mqueue_osx.exe
+
+${SOURCE_16}/16.0_mqueue.exe:
+			$(CC) $(CFLAGS) ${SOURCE_16}/16.0_mqueue.c -lrt -o $@
+
+${SOURCE_16}/16.0_mqueue_osx.exe:
+			$(CC) $(CFLAGS) ${SOURCE_16}/16.0_mqueue_osx.c -o $@
 
 #----------------------------------------------------------------------------
 
