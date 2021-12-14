@@ -11,6 +11,7 @@ SOURCE_06 = 06_readdir
 SOURCE_07 = 07_copydir
 SOURCE_09 = 09_statvfs
 SOURCE_11 = 11_flock
+SOURCE_13 = 13_wait
 
 EXEC_DIR = [^]_executables
 
@@ -118,6 +119,16 @@ ${SOURCE_09}/09.1_statvfs.exe:
 
 ${SOURCE_11}/11.1_flock.exe:
 			$(CC) $(CFLAGS) ${SOURCE_11}/11.1_flock.c -o $@
+
+#----------------------------------------------------------------------------
+
+13_wait: ${SOURCE_13}/13.1_wait.exe ${SOURCE_13}/13.2_ptrace.exe
+
+${SOURCE_13}/13.1_wait.exe:
+			$(CC) $(CFLAGS) ${SOURCE_13}/13.1_wait.c -o $@
+
+${SOURCE_13}/13.2_ptrace.exe:
+			$(CC) $(CFLAGS) ${SOURCE_13}/13.2_ptrace.c -o $@
 
 #----------------------------------------------------------------------------
 
