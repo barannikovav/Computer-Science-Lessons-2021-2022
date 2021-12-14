@@ -155,4 +155,6 @@ clean:
 			rm -rf ${SOURCE_07}/*.exe
 			rm -rf ${SOURCE_09}/*.exe
 			rm -rf ${SOURCE_11}/*.exe ${SOURCE_11}/*.txt
+			rm -rf ${SOURCE_13}/*.exe
+			rm -rf ${SOURCE_16}/*.exe
 
