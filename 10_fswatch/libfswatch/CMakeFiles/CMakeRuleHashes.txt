@@ -1,0 +1,12 @@
+# Hashes of file build rules.
+d5dff4e489d60b236580343635b2db6a CMakeFiles/potfiles_1
+32e92fc28d362856143b588fde813190 en.gmo
+c04512c6dd228b973f48a931d24555d4 en.po
+abc43af4ac2c69077d774870983eab3b en@boldquot.gmo
+271bde8fee111f59af494cd65080759c en@boldquot.po
+ef6f458154c7bc93ae6856f871e2406c en@quot.gmo
+74655aad5927f6b5f1c92c60f33e964c en@quot.po
+a40dde02c29df8eddc3c932046b3c4ac es.gmo
+af706479a53cdbdc6a99d8186b025036 es.po
+6cc258ae6b944b197eefc52565dfe8f8 it.gmo
+a1fcf22acb9c4d73c42fe83aafe22ef3 it.po
