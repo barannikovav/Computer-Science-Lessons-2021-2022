@@ -10,11 +10,11 @@ SOURCE_05 = 05_copyown
 SOURCE_06 = 06_readdir
 SOURCE_07 = 07_copydir
 SOURCE_09 = 09_statvfs
+SOURCE_10 = 10_fswatch
 SOURCE_11 = 11_flock
+SOURCE_12 = 12_processinfo
 SOURCE_13 = 13_wait
 SOURCE_16 = 16_mqueue
-
-EXEC_DIR = [^]_executables
 
 RED=\033[0;31m
 NC=\033[0m
@@ -26,7 +26,7 @@ ifndef VERBOSE
 .SILENT:
 endif
 
-all: 01_stat 02_write 03_contentcopy 04_copyperm 05_copyown 06_readdir
+all: 01_stat 02_write 03_contentcopy 04_copyperm 05_copyown 06_readdir 07_copydir 09_statvfs 10_fswatch 11_flock 12_processinfo 13_wait 16_mqueue
 
 #----------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ ${SOURCE_01}/01_stat.exe:
 ${SOURCE_02}/02.1_write.exe:
 			$(CC) $(CFLAGS) ${SOURCE_02}/02.1_write.c -o $@
 
-${SOURCE_02}/02.2_dprintf.exe:			
+${SOURCE_02}/02.2_dprintf.exe:      
 			$(CC) $(CFLAGS) ${SOURCE_02}/02.2_dprintf.c -o $@
 
 #----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ ${SOURCE_05}/05_copyown.exe:
 06_readdir: ${SOURCE_06}/06.1_readdir.exe ${SOURCE_06}/06.2_readdir_f.exe ${SOURCE_06}/06.3_readdir_g.exe ${SOURCE_06}/06.4_readdir_r.exe
 			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
 
-${SOURCE_06}/06.1_readdir.exe:		
+${SOURCE_06}/06.1_readdir.exe:    
 			$(CC) $(CFLAGS) ${SOURCE_06}/06.1_readdir.c -o $@
 
 ${SOURCE_06}/06.2_readdir_f.exe:
@@ -115,6 +115,14 @@ ${SOURCE_09}/09.1_statvfs.exe:
 
 #----------------------------------------------------------------------------
 
+10_fswatch: ${SOURCE_10}/10.1_fswatch.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}" 
+
+${SOURCE_10}/10.1_fswatch.exe:
+			$(CC) $(CFLAGS) ${SOURCE_10}/10.1_fswatch.c -lfswatch -o $@ 
+			
+#----------------------------------------------------------------------------
+
 11_flock: ${SOURCE_11}/11.1_flock.exe
 			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
 
@@ -122,6 +130,15 @@ ${SOURCE_11}/11.1_flock.exe:
 			$(CC) $(CFLAGS) ${SOURCE_11}/11.1_flock.c -o $@
 
 #----------------------------------------------------------------------------
+
+12_processinfo: ${SOURCE_12}/12.1_processinfo.exe
+			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
+
+${SOURCE_12}/12.1_processinfo.exe:
+			$(CC) $(CFLAGS) ${SOURCE_12}/12.1_processinfo.c -o $@
+
+#----------------------------------------------------------------------------
+
 
 13_wait: ${SOURCE_13}/13.1_wait.exe ${SOURCE_13}/13.2_ptrace.exe
 
@@ -146,15 +163,5 @@ ${SOURCE_16}/16.0_mqueue_osx.exe:
 
 clean:
 			echo  "${GREEN}[Cleaning directories] >>${NC} ${RED}×××${NC}"
-			rm -rf ${SOURCE_01}/*.exe
-			rm -rf ${SOURCE_02}/*.exe
-			rm -rf ${SOURCE_03}/*.exe
-			rm -rf ${SOURCE_04}/*.exe
-			rm -rf ${SOURCE_05}/*.exe
-			rm -rf ${SOURCE_06}/*.exe
-			rm -rf ${SOURCE_07}/*.exe
-			rm -rf ${SOURCE_09}/*.exe
-			rm -rf ${SOURCE_11}/*.exe ${SOURCE_11}/*.txt
-			rm -rf ${SOURCE_13}/*.exe
-			rm -rf ${SOURCE_16}/*.exe
+			rm -rf */*.exe */*.txt
 
