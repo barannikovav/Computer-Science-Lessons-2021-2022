@@ -59,25 +59,27 @@ int scan_dir (const int fd, unsigned layer) {
    DIR *dir_fd = fdopendir(fd); /* getting dir descriptor by it's path */
 
    if (dir_fd == NULL) /* checking opendir output for errors */
-      handle_error("opendir");
+      handle_error("fdopendir");
 
    struct dirent* entry;
 
    while ((entry = readdir(dir_fd)) != NULL) { /* scanning dir until end or error */
+      errno = 0;
 
-      char entry_type = dtype_char(entry->d_type); /* getting file type with dtype */
-      if (entry_type == '?') { /* in case of unknown type/error one more check with stat */
+      if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
          
-         struct stat sb;
-         if (fstatat(fd, entry->d_name, &sb, AT_SYMLINK_NOFOLLOW) < 0) 
-            handle_error("fstatat");
-         else 
-            entry_type = mode_char(sb.st_mode);
+         char entry_type = dtype_char(entry->d_type); /* getting file type with dtype */
+         if (entry_type == '?') { /* in case of unknown type/error one more check with stat */
 
+            struct stat sb;
+
+            if (fstatat(fd, entry->d_name, &sb, AT_SYMLINK_NOFOLLOW) < 0)
+               perror("fstatat");
+            else 
+               entry_type = mode_char(sb.st_mode);
+
+         }
          
-      }
-
-      if(strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
          printf("%c|  ", entry_type);
 
          if(layer > 0) {
@@ -90,9 +92,12 @@ int scan_dir (const int fd, unsigned layer) {
          if (entry_type == 'd') {
             int deeper_dirfd = openat(fd, entry->d_name, O_RDONLY);
             scan_dir(deeper_dirfd, layer + 1);
-            //if (close(deeper_dirfd) != 0) /* closing descriptor with error checking */
-               //handle_error("closedir_1");
          }
+
+
+
+      } else {
+         continue;
       }
 
    }
@@ -106,21 +111,16 @@ int scan_dir (const int fd, unsigned layer) {
 //-----------------------------------------------------------------------------------------------------------------------
 
 int main (int argc, char* argv[]) {
-   int fd = open(argc > 1 ? argv[1] : ".", O_RDONLY); /* getting fd descriptor */
+   int exit_code = 0;
+
+   int fd = open(argc > 1 ? argv[1] : ".", O_RDONLY | O_DIRECTORY); /* getting fd descriptor */
   
-   if (fd == -1)                                 /* O_RDONLY - read-only perms */
-   handle_error("open");                                      
+   if (fd == -1)                                                     /* O_RDONLY - read-only perms */
+      handle_error("open");                                      
 
    unsigned layer = 0;
 
-   int err = scan_dir(fd, layer);
+   exit_code = scan_dir(fd, layer);
 
-   if (err != 0) 
-      return err;
-
-   //if (close(fd) != 0) /* closing descriptor with error checking */
-     // handle_error("close");
-
-
-   return 0;
+   return exit_code;
 }
