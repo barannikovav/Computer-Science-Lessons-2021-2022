@@ -71,7 +71,7 @@ int copying_permissions (int fd, const struct stat* sb) {
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-int copying_regular_file (const int fd_1_, const int fd_2_, void * buf, int buf_size) {
+int copying_regular_file (const int fd_1_, const int fd_2_, void * buf, unsigned int buf_size) {
 
 	int num_of_copied_blocks = 0;
 
@@ -89,7 +89,7 @@ int copying_regular_file (const int fd_1_, const int fd_2_, void * buf, int buf_
 		}
 
 		if (writeall(fd_2_, buf, buf_size) < 0) { // checking writeall completion status for errors
-			handle_error_free("Error in file writing");
+			handle_error("Error in file writing");
 		} else { ++num_of_copied_blocks; }
 
 	}
@@ -110,6 +110,7 @@ int copying_regular_file (const int fd_1_, const int fd_2_, void * buf, int buf_
 
 int main (int argc, char *argv[]) {
 	int exit_code = 0;
+	void * buffer = NULL;
 
 	if (argc != 3) { // checking the number of function arguments
 		printf("Usage: %s <source> <destination>\n", argv[0]);
@@ -139,12 +140,13 @@ int main (int argc, char *argv[]) {
 	if (fd_2 < 0) { // checking second file descriptor for errors
 		exit_code = errno;
 		perror("Failed to open second file for copying");	
-	} else if (copying_regular_file(fd_1, fd_2) != 0) {
+	} else if (copying_regular_file(fd_1, fd_2, buffer, BLOCK_SIZE) != 0) {
 		fprintf(stderr, "Error in copying_of_file");
 		exit_code = ERR_COF;
 	} else if (copying_permissions(fd_2, &sbet) != 0) {
 		fprintf(stderr, "Error in copying_permissions");
 		exit_code = ERR_CFP;
+	}
 
 
 	if (close(fd_1) < 0) { // checking closing first file descriptor for errors
