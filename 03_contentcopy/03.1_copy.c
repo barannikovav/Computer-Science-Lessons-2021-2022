@@ -45,16 +45,7 @@ ssize_t writeall (int fd, const void *buf, size_t count) // function that contro
 enum 
 {
 
-ERR_ARG_NUM = 1/*,
-ERR_LST,
-ERR_FTY,
-ERR_FOF,
-ERR_FOS,
-ERR_FRE,
-ERR_FWR,
-ERR_FFC,
-ERR_SFC
-*/
+ERR_ARG_NUM = 1
 };
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -100,16 +91,16 @@ int main (int argc, char *argv[]) {
 
 	int num_of_copied_blocks = 0;
 
-	ssize_t read_return = 1; // creating a variable to get pread completion status
+	ssize_t read_return = 1; // creating a variable to get read completion status
 													 // default value is 1 to start while
 
 	while (read_return > 0) {
 
 		void *buf = calloc(BLOCK_SIZE, sizeof(char)); // allocating BLOCK_SIZE of memory for buffer
 
-		read_return = read(fd_1, buf, BLOCK_SIZE); // getting pread completion status
+		read_return = read(fd_1, buf, BLOCK_SIZE); // getting read completion status
 
-		if (read_return < 0) { // checking pread completion status for errors
+		if (read_return < 0) { // checking read completion status for errors
 			
 			handle_error_free("Error in file reading", buf);
 		}

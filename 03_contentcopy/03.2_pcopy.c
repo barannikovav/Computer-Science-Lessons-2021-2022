@@ -48,16 +48,8 @@ ssize_t pwriteall (int fd, const void *buf, size_t count, off_t offset) // funct
 enum 
 {
 
-ERR_ARG_NUM = 1 /*,
-ERR_LST,
-ERR_FTY,
-ERR_FOF,
-ERR_FOS,
-ERR_FRE,
-ERR_FWR,
-ERR_FFC,
-ERR_SFC
-*/
+ERR_ARG_NUM = 1 
+
 };
 
 //-----------------------------------------------------------------------------------------------------------------------

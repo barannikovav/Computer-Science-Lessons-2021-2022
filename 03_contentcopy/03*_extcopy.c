@@ -1,6 +1,6 @@
-
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/errno.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -11,115 +11,104 @@
 #include <fcntl.h> //open
 #include <unistd.h> //close
 
+#define BLOCK_SIZE 4096
+
+// function for convenient error handling
+#define handle_error(msg) \
+				do { int errno_code = errno; perror(msg); return errno_code; } while (0)
+
+// function for convenient error handling with freeing
+#define handle_error_free(msg, ptr) \
+				do { int errno_code = errno; perror(msg); free(ptr); return errno_code; } while (0)
+
 //-----------------------------------------------------------------------------------------------------------------------
 
 enum error_codes
 {
 
-ERR_ARG = 1, // Error code 1  - wrong number of function arguments
-ERR_LST,     // Error code 2  - failure in lstat work
-ERR_FOF,     // Error code 3  - failed to open first file for copying
-ERR_PRF,     // Error code 4  - failed to process regular file
-ERR_FOS,     // Error code 5  - failed to open second file for inserting
-ERR_FRE,     // Error code 6  - failure in file reading
-ERR_FWR,     // Error code 7  - failure in file writing
-ERR_FFC,     // Error code 8  - failed to close first file
-ERR_SFC,     // Error code 9  - failed to close second file
-ERR_PFI,		 // Error code 10 - failed to process fifo
-ERR_PSL,     // Error code 11 - failed to process symlink
-ERR_PBD,     // Error code 12 - failed to process block device
-ERR_PCD,     // Error code 13 - failed to process character device
-ERR_FCP,     // Error code 14 - failed to process file type
-ERR_FCF,     // Error code 15 - failed to create FIFO file
-ERR_RLE,     // Error code 16 - failed to read symlink with readlink
-ERR_SLK,     // Error code 17 - failed to create symlink with symlink
-ERR_MND,     // Error code 18 - failed to use mknode
-ERR_PFT      // Error code 19 - failed to process file type
-
-
-
-
+	ERR_ARG = 1, // Error code 1  - wrong number of function arguments
+	ERR_PRF,     // Error code 2  - failed to process regular file
+	ERR_PFI,		 // Error code 3 - failed to process fifo
+	ERR_PSL,     // Error code 4 - failed to process symlink
+	ERR_PBD,     // Error code 5 - failed to process block device
+	ERR_PCD,     // Error code 6 - failed to process character device
+	ERR_FCP,     // Error code 7 - failed to process file type
 
 };
 
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-ssize_t writeall (int fd, const void *buf, size_t count) 
+ssize_t writeall (int fd, const void *buf, size_t count) // function that controls the operation of write
 {
-	size_t bytes_written = 0;
-	const uint8_t *buf_addr = buf;
-	
-	while (bytes_written < count) {
-		
-		ssize_t res = write(fd, buf_addr + bytes_written, count - bytes_written);
-		
-		if (res < 0) {
-			
-			return res;
+    size_t bytes_written = 0;
+    const uint8_t *buf_addr = buf;
+    
+    while (bytes_written < count) {
+        
+        ssize_t res = write(fd, buf_addr + bytes_written, count - bytes_written);
+        
+        if (res < 0) {
+            
+            return res;
 
-		}
-		
-		bytes_written += (size_t)res;
-	}
-	
-	return (ssize_t)bytes_written;
+        }
+        
+        bytes_written += (size_t)res;
+    }
+    
+    return (ssize_t)bytes_written;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-int process_fifo (const char* newname, const struct stat* sb) {
+int copying_fifo (const char* newname, const struct stat* sb) { // function for copying fifo with error checking
 	if (mkfifo(newname, sb->st_mode) < 0) {
-		perror("Failed to create FIFO file\n");
-		return ERR_FCF;
+		handle_error("Failed to create FIFO file");
 	}
 
 	return 0;
 }
 //-----------------------------------------------------------------------------------------------------------------------
 
-int process_symlink (const char* pathname, const char* newname, const struct stat* sb) {
+int copying_symlink (const char* pathname, const char* newname, const struct stat* sb) {
 	size_t bufsiz;
 	char* buf;
 
-	bufsiz = (size_t)(sb->st_size + 1);
-	buf = (char*)calloc(bufsiz, sizeof(char));
-	if (buf == NULL) {
+	bufsiz = (size_t)(sb->st_size + 1); // setting size of a buffer for symlink
+	buf = (char*)calloc(bufsiz, sizeof(char)); // creating a buffer for symlink
+	if (buf == NULL) { // checking buf ptr for errors
 		perror("calloc");
 		exit(EXIT_FAILURE);
 	}
 
-	if (readlink(pathname, buf, bufsiz) < 0) {
+	if (readlink(pathname, buf, bufsiz) < 0) { // checking readlink for errors
 		perror("readlink");
-		free (buf);
-		return ERR_RLE;
 	}	
 
-	if (symlink(buf, newname) < 0) {
-		perror("symlink");
-		free(buf);
-		return ERR_SLK;
+	if (symlink(buf, newname) < 0) { // checking symlink for errors
+		perror("readlink");
 	}
+
+	free(buf);
 
 	return 0;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-int process_block_device (const char* newname, const struct stat* sb) {
+int copying_block_device (const char* newname, const struct stat* sb) { // function for copying block device with error checking
 	if (mknod(newname, sb->st_mode, sb->st_rdev) < 0) {
-		perror("mknod");
-		return ERR_MND;
+		handle_error("mknod");
 	}
 
 	return 0;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
-int process_character_device (const char* newname, const struct stat* sb) {
+int copying_character_device (const char* newname, const struct stat* sb) { // function for character device with error checking
 	if (mknod(newname, sb->st_mode, sb->st_rdev) < 0) {
-		perror("mknod");
-		return ERR_MND;
+		handle_error("mknod");
 	}
 
 	return  0;
@@ -127,53 +116,105 @@ int process_character_device (const char* newname, const struct stat* sb) {
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-int process_regular_file (const char* pathname, const char* newname) {
+int copying_regular_file (const char* pathname, const char* newname, void * buf, unsigned int buf_size) {
+  int exit_code;
+  int num_of_copied_blocks = 0;
 
+  // r/w for user, read-only for group and others
+	int fd_1 = open(pathname, O_RDONLY);
+	int fd_2 = 0;
+
+  if (fd_1 < 0){
+    exit_code = errno;
+    perror("Failed to open first file for copying");
+  } else {
+    fd_2 = open(newname, O_WRONLY | O_CREAT | O_TRUNC, 0644); // opening or creating second file for writing only
+
+    if (fd_2 < 0) { // checking second file descriptor for errors
+    	exit_code = errno; 
+    	perror("Failed to open second file for copying");   
+  	} else {
+      	ssize_t read_return = 1; // creating a variable to get read completion status
+        	                       // default value is 1 to start while
+
+      	buf = malloc(buf_size * sizeof(char)); // allocating BLOCK_SIZE of memory for buffer
+
+      	while (read_return > 0) {
+
+	        read_return = read(fd_1, buf, buf_size); // getting read completion status
+
+  	      if (read_return < 0) { // checking read completion status for errors
+    	      handle_error("Error in file reading");
+      	  }
+
+        	if (writeall(fd_2, buf, buf_size) < 0) { // checking writeall completion status for errors
+          	handle_error("Error in file writing");
+        	} else { ++num_of_copied_blocks; }
+
+      	}
+
+      	free(buf);
+
+      	if (read_return == 0) { // checking final completion status
+					puts("Copying of regular file completed");
+				}
+
+				printf("Number of blocks were processed: %d\n", num_of_copied_blocks);
+     	}
+    }
+
+    
+
+    if (close(fd_1) < 0) { // checking closing first file descriptor for errors
+        perror("Error in first file closing");
+    }
+
+    if (close(fd_2) < 0) { // checking closing second file descriptor for errors
+
+        perror("Error in second file closing");
+    }
+
+
+    return 0;
+}
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+/*
+int copying_regular_file (const char* pathname, const char* newname, void * buf, unsigned int buf_size) {
+
+	int num_of_copied_blocks = 0;
 
 	// r/w for user, read-only for group and others
 	int fd_1 = open(pathname, O_RDONLY);
 
-	if (fd_1 < 0) {
-			
-		perror("Failed to open first file for copying");
-
-		return ERR_FOF;
+	if (fd_1 < 0) { // checking first file descriptor for errors
+		handle_error("Failed to open first file for copying");
 	}
 
-	int fd_2 = open(newname, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-
-	if (fd_2 < 0) {
-			
-		perror("Failed to open second file for inserting");
-
-		return ERR_FOS;
+	int fd_2 = open(newname, O_WRONLY | O_CREAT | O_TRUNC, 0644); // opening or creating second file for writing only
+																																// O_TRUNC flag truncates existing file to zero length
+	if (fd_2 < 0) { // checking second file descriptor for errors
+		handle_error("Failed to open second file for copying");	
 	}
 
 
 	int num_of_copied_blocks = 0;
 
-	ssize_t read_status = 1;
+	ssize_t read_return = 1; // creating a variable to get read completion status
+													 // default value is 1 to start while
+	while (read_return > 0) {
 
-	while (read_status > 0) {
+		buf = calloc(buf_size, sizeof(char)); // allocating buf_size of memory for buffer
 
-		void *buf = calloc(4096, sizeof(char));
+		read_return = read(fd_1, buf, buf_size); // getting read completion status
 
-		read_status = read(fd_1, buf, 4096);
-
-		if (read_status < 0) {
-
-			perror("Error in file reading");
-			free(buf);
-
-			return ERR_FRE;
+		if (read_return < 0) { // checking read completion status for errors
+			handle_error_free("Error in file reading", buf);
 		}
 
-		if (writeall(fd_2, buf, 4096) < 0) {
-
-			perror ("Error in file writing");
-			free(buf);
-
-			return ERR_FWR;
+		if (writeall(fd_2, buf, buf_size) < 0) { // checking writeall completion status for errors
+			handle_error_free("Error in file writing", buf);
 		} else { ++num_of_copied_blocks; }
 
 		free(buf);
@@ -181,79 +222,74 @@ int process_regular_file (const char* pathname, const char* newname) {
 
 	}
 
-	if (read_status == 0) {
+	if (read_return == 0) { // checking final completion status
 		puts("Copying of regular file completed");
 	}
 
 	printf("Number of blocks were processed: %d\n", num_of_copied_blocks);
 
-	if (close(fd_1) < 0) {
-
-		perror("Error in first file closing");
-
-		return ERR_FFC;
+	if (close(fd_1) < 0) { // checking closing first file descriptor for errors
+		handle_error("Error in first file closing");
 	}
 
-	if (close(fd_2) < 0) {
+	if (close(fd_2) < 0) { // checking closing second file descriptor for errors
 
-		perror("Error in second file closing");
-
-		return ERR_SFC;
+		handle_error("Error in second file closing");
 	}
 
 
 	return 0;
 }
-
-
-
-
+*/
 //-----------------------------------------------------------------------------------------------------------------------
 
-int processing_of_file_type (mode_t type, const char* argv_1, const char* argv_2, const struct stat* sb) {
+int copying_of_file (mode_t type, const char* argv_1, const char* argv_2, const struct stat* sb) {
+	void * buffer = NULL;
+
 	switch (type) {
-		int return_code;
+		int return_code; // variable that  uses to contain return codes of copying functions
+		
 		case S_IFREG: 
-			return_code = process_regular_file(argv_1, argv_2);
+			return_code = copying_regular_file(argv_1, argv_2, buffer, BLOCK_SIZE);
 			
 			if (return_code != 0) {
-				fprintf(stderr, "Error in function process_regular_file. Error code:%d \n", return_code);
+				fprintf(stderr, "Error in function copying_regular_file. Error code:%d \n", return_code);
 				return ERR_PRF;
 			} 
 
 			break;
 		case S_IFIFO:
-			return_code = process_fifo(argv_2, sb);
+			return_code = copying_fifo(argv_2, sb);
 
 			if (return_code != 0) {
-				fprintf(stderr, "Error in function process_fifo. Error code:%d \n", return_code);
+				fprintf(stderr, "Error in function copying_fifo. Error code:%d \n", return_code);
 				return ERR_PFI;
 			} else {puts("Copy of FIFO completed");}
 
 			break;
 		case S_IFLNK:
-			return_code = process_symlink(argv_1, argv_2, sb);
+			return_code = copying_symlink(argv_1, argv_2, sb);
 
 			if (return_code != 0) {
-				fprintf(stderr, "Error in function process_symlink. Error code:%d \n", return_code);
+				fprintf(stderr, "Error in function copying_symlink. Error code:%d \n", return_code);
 				return ERR_PSL;
 			} else {puts("Copy of symlink completed");}
 
 			break;
 		case S_IFBLK:
-			return_code = process_block_device(argv_2, sb);
+			return_code = copying_block_device(argv_2, sb);
 
 			if (return_code != 0) {
-				fprintf(stderr, "Error in function process_block_device. Error code:%d \n", return_code);
+				fprintf(stderr, "Error in function copying_block_device. Error code:%d \n", return_code);
 				return ERR_PBD;
 			} else {puts("Copy of block device completed");}
 
 			break;
 		case S_IFCHR:
-			return_code = process_character_device(argv_2, sb);
+			return_code = copying_character_device(argv_2, sb);
 
 			if (return_code != 0) {
-				fprintf(stderr, "Error in function process_character_device. Error code:%d \n", return_code);
+				fprintf(stderr, "Error in function copying_character_device. Error code:%d \n", return_code);
 				return ERR_PCD;
 			} else {puts("Copy of character device completed");}
 
@@ -270,28 +306,19 @@ int processing_of_file_type (mode_t type, const char* argv_1, const char* argv_2
 
 int main (int argc, char *argv[]) {
 
-	if (argc != 3) {
-		
-		fprintf(stderr, "Wrong number of function arguments");
-
-
+	if (argc != 3) { // checking the number of function arguments
+		printf("Usage: %s <source> <destination>\n", argv[0]);
 		return ERR_ARG;
 	}
 
-	struct stat sbet;
+	struct stat sbet; // creating a structure to get information from lstat
 
-	if (lstat(argv[1], &sbet) == -1) {
-       
-    perror("Error in lstat");
-
-    return ERR_LST;
+	if (lstat(argv[1], &sbet) == -1) { // checking lstat completion status
+    handle_error("Error in lstat");  
   }
 
-	if (processing_of_file_type((sbet.st_mode & S_IFMT), argv[1], argv[2], &sbet) != 0) {
-		
-		perror("Error in processing_of_file_type");
-
-		return  ERR_PFT;
+	if (copying_of_file((sbet.st_mode & S_IFMT), argv[1], argv[2], &sbet) != 0) {
+		handle_error("Error in processing_of_file_type");
 	}
 
 	return 0;
