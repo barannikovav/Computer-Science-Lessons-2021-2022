@@ -38,19 +38,17 @@ int main (int argc, char *argv[]) {
 
 		while(1) { /* waiting for change in child process in loop  */
 			res = waitpid(-1, &status, WUNTRACED | WCONTINUED); /* getting any child process signal info */
-
-			if (res < 0)
+                                                          /* WUNTRACED - children of current process that are stopped due SIG signals have reported too  */
+			if (res < 0)                                        /* WCONTINUED - let child processes have been resumed after SIGCONT  */
 				handle_error("waitpid");
 
-			if (WIFEXITED(status))
+			if (WIFEXITED(status)) {
 				printf("Child with PID = %d terminated normally by a call to <<exit>>. Exit status: %d\n", res, WEXITSTATUS(status)); break;
-			if (WIFSTOPPED(status))
+			} else if (WIFSTOPPED(status)) {
 				printf("Child with PID = %d has stopped by signal %d (%s) but can be restarted\n", res, WSTOPSIG(status), strsignal(WSTOPSIG(status)));
-			if (WIFCONTINUED(status))
+			} else if (WIFCONTINUED(status)) {
 				printf("Child with PID = %d has been continued\n", res);
-			
-			if (WIFSIGNALED(status)) {
-
+			} else if (WIFSIGNALED(status)) {
 				int child_signal = WTERMSIG(status);
 				printf("Child with PID = %d was terminated due to reсeipt of signal %d (%s)\n", res, child_signal, strsignal(child_signal));
 
