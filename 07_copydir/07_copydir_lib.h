@@ -170,50 +170,50 @@ int copying_block_and_character_device_at (int dirfd, const char* newname, const
 //-----------------------------------------------------------------------------------------------------------------------
 
 int copying_regular_file_at (int dirfd_start, int dirfd_destination, const char* pathname, const char* newname) {
-
+    int exit_code;
 
     // r/w for user, read-only for group and others
     int fd_1 = openat(dirfd_start, pathname, O_RDONLY);
 
-    if (fd_1 < 0) { // checking first file descriptor for errors
-        handle_error("Failed to open first file for copying");
-    }
+    if (fd_1 < 0){
+        exit_code = errno;
+        perror("Failed to open first file for copying");
+    } else {
+        int fd_2 = openat(dirfd_destination, newname, O_WRONLY | O_CREAT | O_TRUNC, 0644); // opening or creating second file for writing only
+        if (fd_2 < 0) { // checking second file descriptor for errors
+            exit_code = errno; 
+            perror("Failed to open second file for copying");   
+        } else {
+            ssize_t read_return = 1; // creating a variable to get read completion status
+                                     // default value is 1 to start while
 
-    int fd_2 = openat(dirfd_destination, newname, O_WRONLY | O_CREAT | O_TRUNC, 0644); // opening or creating second file for writing only
-                                                                                                                                                                     // O_TRUNC flag truncates existing file to zero length
-    if (fd_2 < 0) { // checking second file descriptor for errors
-        handle_error("Failed to open second file for copying"); 
-    }
+            void *buf = malloc(BLOCK_SIZE * sizeof(char)); // allocating BLOCK_SIZE of memory for buffer
 
+            while (read_return > 0) {
 
-    ssize_t read_return = 1; // creating a variable to get read completion status
-                                                     // default value is 1 to start while
-    while (read_return > 0) {
+                read_return = read(fd_1, buf, BLOCK_SIZE); // getting read completion status
 
-        void *buf = calloc(BLOCK_SIZE, sizeof(char)); // allocating BLOCK_SIZE of memory for buffer
+                if (read_return < 0) { // checking read completion status for errors
+                    handle_error("Error in file reading");
+                }
 
-        read_return = read(fd_1, buf, BLOCK_SIZE); // getting read completion status
+                if (writeall(fd_2, buf, BLOCK_SIZE) < 0) { // checking writeall completion status for errors
+                    handle_error("Error in file writing");
+                }
 
-        if (read_return < 0) { // checking read completion status for errors
-            handle_error_free("Error in file reading", buf);
+            }
+
+            free(buf);
         }
-
-        if (writeall(fd_2, buf, BLOCK_SIZE) < 0) { // checking writeall completion status for errors
-            handle_error_free("Error in file writing", buf);
-        }
-
-        free(buf);
-
-
     }
 
     if (close(fd_1) < 0) { // checking closing first file descriptor for errors
-        handle_error("Error in first file closing");
+        perror("Error in first file closing");
     }
 
     if (close(fd_2) < 0) { // checking closing second file descriptor for errors
 
-        handle_error("Error in second file closing");
+        perror("Error in second file closing");
     }
 
 
