@@ -8,6 +8,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define PERMS 0x1FF
+
 
 //-----------------------------------------------------------------------------------------------------------------------
 
@@ -28,36 +30,18 @@ const char * File_type_switch (unsigned mode) { // switch function for type of f
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-char * access_convert (uintmax_t access_code) {//function that  convert access code to access string
-        
-        access_code = access_code & 0x1FF;//using mask here to decode 
-        char * output;
-        
-        output = (char *) calloc(10, sizeof(char));//creating output string
-
-
-        uintmax_t converter = 0x100;
-        
-        for (int i = 0; i < 9; ++i) { //inserting right sequence of chars in 'rwx' format
-                if ((access_code & converter) == converter) {
-                        if (i % 3 == 0) {
-                                output[i] = 'r';
-                        }
-                        else if (i % 3 == 1) {
-                                output[i] = 'w';
-                        }
-                        else {
-                                output[i] = 'x';
-                        }
-                }
-                else {
-                       output[i] = '-'; 
-                }
-                converter = converter >> 1; 
-
-        }
-
-        return output;
+void perms(char* buf, const unsigned mode)
+{
+    buf[0] = mode & S_IRUSR ? 'r' : '-';
+    buf[1] = mode & S_IWUSR ? 'w' : '-';
+    buf[2] = mode & S_IXUSR ? 'x' : '-';
+    buf[3] = mode & S_IRGRP ? 'r' : '-';
+    buf[4] = mode & S_IWGRP ? 'w' : '-';
+    buf[5] = mode & S_IXGRP ? 'x' : '-';
+    buf[6] = mode & S_IROTH ? 'r' : '-';
+    buf[7] = mode & S_IWOTH ? 'w' : '-';
+    buf[8] = mode & S_IXOTH ? 'x' : '-';
+    buf[9] = '\0';
 }
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -80,6 +64,7 @@ int main(int argc, char *argv[])
         {
         struct stat sb;
         char string[sizeof("YYYY-mm-dd HH:MM:SS.nnnnnnnnn +hhmm")];
+        char perm_str[sizeof("rwxrwxrwx")];
 
 
            if (argc != 2) {
@@ -103,11 +88,9 @@ int main(int argc, char *argv[])
 
            printf("I-node number:            %ju\n", (uintmax_t) sb.st_ino);
 
-           char * ptr = access_convert(sb.st_mode);
+           perms(perm_str, sb.st_mode);
 
-           printf("Access:                   (%jo/%s)\n", (uintmax_t) sb.st_mode & 0x1FF, ptr);
-
-           free(ptr);
+           printf("Access:                   (%jo/%s)\n", (uintmax_t) sb.st_mode & PERMS, perm_str);
 
            printf("Mode:                     %jo (octal)\n",
                    (uintmax_t) sb.st_mode);
