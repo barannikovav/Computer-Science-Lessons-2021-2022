@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-//#include <libfswatch/c/libfswatch.h>
 #include "./libfswatch/src/libfswatch/c/libfswatch.h"
 
 #define BUF_SIZE 4096
@@ -81,8 +80,8 @@ void *thread_stop(void * ptr_arg) {
 void my_callback (fsw_cevent const *const events, 
                   const unsigned int event_num, 
                   void * data) {
-  data++;
-  data--;
+  data = (void *) data;
+
   printf("[%d %s occured:]\n\n", event_num, event_num > 1 ? "events" : "event");
 
   for (unsigned int i = 0; i < event_num; ++i) {
