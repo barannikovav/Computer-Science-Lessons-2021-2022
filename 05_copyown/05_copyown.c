@@ -86,25 +86,25 @@ int copying_own (const int fd, const struct stat* sb) {
 }
 //-----------------------------------------------------------------------------------------------------------------------
 
-int copying_regular_file (const int fd_1_, const int fd_2_) {
+int copying_regular_file (const int fd_1_, const int fd_2_, void * buf, unsigned int buf_size) {
 
 	int num_of_copied_blocks = 0;
 
 	ssize_t read_return = 1; // creating a variable to get read completion status
 													 // default value is 1 to start while
 
-	void *buf = calloc(BLOCK_SIZE, sizeof(char)); // allocating BLOCK_SIZE of memory for buffer
+	buf = malloc(buf_size * sizeof(char)); // allocating buf_size of memory for buffer
 
 	while (read_return > 0) {
 
-		read_return = read(fd_1_, buf, BLOCK_SIZE); // getting read completion status
+		read_return = read(fd_1_, buf, buf_size); // getting read completion status
 
 		if (read_return < 0) { // checking read completion status for errors
 			handle_error("Error in file reading");
 		}
 
-		if (writeall(fd_2_, buf, BLOCK_SIZE) < 0) { // checking writeall completion status for errors
-			handle_error_free("Error in file writing");
+		if (writeall(fd_2_, buf, buf_size) < 0) { // checking writeall completion status for errors
+			handle_error("Error in file writing");
 		} else { ++num_of_copied_blocks; }
 
 	}
@@ -125,6 +125,7 @@ int copying_regular_file (const int fd_1_, const int fd_2_) {
 
 int main (int argc, char *argv[]) {
 	int exit_code = 0;
+	void * buffer = NULL;
 
 	if (argc != 3) { // checking the number of function arguments
 		printf("Usage: %s <source> <destination>\n", argv[0]);
@@ -153,7 +154,7 @@ int main (int argc, char *argv[]) {
 	if (fd_2 < 0) { // checking second file descriptor for errors
 		exit_code = errno;
 		perror("Failed to open second file for copying");	
-	} else if (copying_regular_file(fd_1, fd_2) != 0) {
+	} else if (copying_regular_file(fd_1, fd_2, buffer, BLOCK_SIZE) != 0) {
 		fprintf(stderr, "Error in copying_of_file");
 		exit_code = ERR_COF;
 	} else if (copying_permissions(fd_2, &sbet) != 0) {
