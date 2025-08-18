@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>
+#include <sys/sysmacros.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,15 +47,20 @@ void perms(char* buf, const unsigned mode)
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-int my_ctime(char* out_buf, size_t buf_size, const struct timespec * file_timestamp) { //function that is using instead of ctimes
+int my_ctime(char* out_buf, size_t buf_size, const struct timespec* file_timestamp) { //function that is using instead of ctimes
         
-        struct tm* t_time = localtime(&(file_timestamp->tv_sec));
+        //break UNIX timestamp into components
+        struct tm* time_tm = localtime(&(file_timestamp->tv_sec));
         
+        // format string with date
         char yyyymmdd_hhmmss[sizeof("YYYY-mm-dd HH:MM:SS")];
         char tz_str[sizeof("+hhmm")];
 
-        strftime(yyyymmdd_hhmmss, sizeof(yyyymmdd_hhmmss), "%F %T", t_time);
+        // format timezone string
+        strftime(yyyymmdd_hhmmss, sizeof(yyyymmdd_hhmmss), "%F %T", time_tm);
+        strftime(tz_str, sizeof(tz_str), "%z", time_tm);
 
+        // build final result from string components
         return snprintf(out_buf, buf_size, "%s.%09ld %s", yyyymmdd_hhmmss, file_timestamp->tv_nsec, tz_str);
 }
 
@@ -108,17 +114,14 @@ int main(int argc, char *argv[])
            
            tzset();
 
-           my_ctime(string, sizeof(string), &sb.st_ctimespec);
+           my_ctime(string, sizeof(string), &sb.st_ctim);
            printf("Last status change:       %s\n", string);
 
-           my_ctime(string, sizeof(string), &sb.st_atimespec);
+           my_ctime(string, sizeof(string), &sb.st_atim);
            printf("Last file access:         %s\n", string);
 
-           my_ctime(string, sizeof(string), &sb.st_mtimespec);
+           my_ctime(string, sizeof(string), &sb.st_mtim);
            printf("Last file modification:   %s\n", string);
-
-           my_ctime(string, sizeof(string), &sb.st_birthtimespec);
-           printf("File creation(birth):     %s\n", string);
 
            exit(EXIT_SUCCESS);
        }
