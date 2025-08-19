@@ -32,11 +32,8 @@ ssize_t writeall (int fd, const void *buf, size_t count) //function for reliable
 		
 		ssize_t res = write(fd, buf_addr + bytes_written, count - bytes_written);
 		
-		if (res < 0) {
-			
+		if (res < 0)
 			return res;
-
-		}
 		
 		bytes_written += (size_t)res;
 	}
@@ -65,19 +62,19 @@ int main (int argc, char *argv[]) {
 			return ERR_FOF;
 		}
 
+		int ret_val = 0;
+
 		if (writeall(fd, argv[2], strlen(argv[2])) < 0) { //writing and checking the results
 			
 			perror("Failure while writing");
-			close(fd);
-
-			return ERR_FWR;
-			}
+			ret_val = ERR_FWR;
+		}
 
 		if (close(fd) < 0) { //closing and checking the results
 			perror("Failure while closing fd");
 
-			return ERR_FIC;
+			ret_val = ERR_FIC;
 		}
 
-		return 0;
+		return ret_val;
 }
