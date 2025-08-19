@@ -28,7 +28,7 @@ enum error_codes
 
 	ERR_ARG = 1, // Error code 1  - wrong number of function arguments
 	ERR_PRF,     // Error code 2  - failed to process regular file
-	ERR_PFI,		 // Error code 3 - failed to process fifo
+	ERR_PFI,	 // Error code 3 - failed to process fifo
 	ERR_PSL,     // Error code 4 - failed to process symlink
 	ERR_PBD,     // Error code 5 - failed to process block device
 	ERR_PCD,     // Error code 6 - failed to process character device

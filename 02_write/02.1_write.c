@@ -62,7 +62,7 @@ int main (int argc, char *argv[]) {
 			return ERR_FOF;
 		}
 
-		int ret_val = 0;
+		int ret_val = EXIT_SUCCESS;
 
 		if (writeall(fd, argv[2], strlen(argv[2])) < 0) { //writing and checking the results
 			

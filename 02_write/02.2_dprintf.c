@@ -42,19 +42,19 @@ int main (int argc, char *argv[]) {
 			return ERR_FOF;
 		}
 
+		int ret_val = 0;
+
 		if (dprintf(fd, "%s",argv[2]) < 0) {//priting and checking the results
 			
 			perror("Failure while writing");
-			close(fd);
-
-			return ERR_FWR;
-			}
+			ret_val = ERR_FWR;
+		}
 
 		if (close(fd) < 0) { //closing and checking the results
 			perror("Failure while closing fd");
 
-			return ERR_FIC;
+			ret_val = ERR_FIC;
 		}
 
-		return 0;
+		return ret_val;
 }
