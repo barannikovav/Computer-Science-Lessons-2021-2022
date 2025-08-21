@@ -22,12 +22,12 @@ ssize_t writeall (int fd, const void *buf, size_t count) // function that contro
 
 //-----------------------------------------------------------------------------------------------------------------------
 
-int copy_regular_file (const char* pathname, const char* newname, void * buf, unsigned int buf_size) {
+int copy_regular_file (const char* pathname, const char* newname, unsigned int block_size) {
     int ret_val = EXIT_SUCCESS;
     int num_of_copied_blocks = 0;
 
     // r/w for user, read-only for group and others
-	int fd_1 = open(argv[1], O_RDONLY); // opening first file with reading only access mode
+	int fd_1 = open(pathname, O_RDONLY); // opening first file with reading only access mode
 
     if (fd_1 < 0) { // checking first file descriptor for errors
 			
@@ -35,7 +35,7 @@ int copy_regular_file (const char* pathname, const char* newname, void * buf, un
 		return ERR_FOFC;
 	}
 
-    int fd_2 = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 0644); // opening or creating second file for writing only
+    int fd_2 = open(newname, O_WRONLY | O_CREAT | O_TRUNC, 0644); // opening or creating second file for writing only
 																  // O_TRUNC flag truncates existing file to zero length
 	if (fd_2 < 0) { // checking second file descriptor for errors
 
@@ -46,11 +46,11 @@ int copy_regular_file (const char* pathname, const char* newname, void * buf, un
     ssize_t read_return = 1;    // creating a variable to get read completion status
 							    // default value is 1 to start while
 
-	void *buf = calloc(BLOCK_SIZE, sizeof(char)); // allocating BLOCK_SIZE of memory for buffer
+	void *buf = calloc(block_size, sizeof(char)); // allocating BLOCK_SIZE of memory for buffer
 
 	while (read_return > 0) {
 
-		read_return = read(fd_1, buf, BLOCK_SIZE); // getting read completion status
+		read_return = read(fd_1, buf, block_size); // getting read completion status
 
 		if (read_return < 0) { // checking read completion status for errors
 			perror("Error in file reading");
@@ -159,13 +159,12 @@ int copy_character_device (const char* newname, const struct stat* sb) { // func
 //-----------------------------------------------------------------------------------------------------------------------
 
 int copy_file (mode_t type, const char* argv_1, const char* argv_2, const struct stat* sb) {
-	void * buffer = NULL;
 
 	switch (type) {
-		int return_code; // variable that  uses to contain return codes of copying functions
+		int return_code; // variable that is used to contain return code of copy function
 		
 		case S_IFREG: 
-			return_code = copy_regular_file(argv_1, argv_2, buffer, BLOCK_SIZE);
+			return_code = copy_regular_file(argv_1, argv_2, BLOCK_SIZE);
 			
 			if (return_code != 0) {
 				fprintf(stderr, "Error in function copying_regular_file. Error code:%d \n", return_code);

@@ -52,6 +52,17 @@ ${SOURCE_02}/02.2_dprintf.exe:
 03_contentcopy: ${SOURCE_03}/03.1_copy.exe ${SOURCE_03}/03.2_pcopy.exe ${SOURCE_03}/03*_extcopy.exe
 			echo  "${GREEN}[Built target] >> ${NC}${BRIGHT_MAGENTA}$@${NC}"
 
+main.o:
+	$(CC) -c 03*_extcopy.c -o main.o
+
+03_tmp: libcopylib.a main.o
+	$(CC) -o output main.o -L. -lcopylib
+
+copylib.o:
+	$(CC) -c copylib.c
+
+libcopylib.a: copylib.o
+	ar cr libcopylib.a copylib.o	
 ${SOURCE_03}/03.1_copy.exe:
 			$(CC) $(CFLAGS) ${SOURCE_03}/03.1_copy.c -o $@
 

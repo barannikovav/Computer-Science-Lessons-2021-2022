@@ -49,7 +49,7 @@ enum error_codes
 //-----------------------------------------------------------------------------------------------------------------------
 ssize_t writeall (int fd, const void *buf, size_t count);
 
-int copy_regular_file (const char* pathname, const char* newname, void * buf, unsigned int buf_size);
+int copy_regular_file (const char* pathname, const char* newname, unsigned int block_size);
 
 int copy_fifo (const char* newname, const struct stat* sb);
 

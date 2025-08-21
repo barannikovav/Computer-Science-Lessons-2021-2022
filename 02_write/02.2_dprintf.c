@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,7 +43,7 @@ int main (int argc, char *argv[]) {
 			return ERR_FOF;
 		}
 
-		int ret_val = 0;
+		int ret_val = EXIT_SUCCESS;
 
 		if (dprintf(fd, "%s",argv[2]) < 0) {//priting and checking the results
 			
